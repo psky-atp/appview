@@ -1,18 +1,14 @@
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
-import { XRPC, CredentialManager } from "@atcute/client";
 import { env } from "./env.js";
 import * as t from "tschema";
-
-const manager = new CredentialManager({ service: env.SERVICE });
-const rpc = new XRPC({ handler: manager });
-await manager.login({ identifier: env.DID, password: env.PASSWORD });
 
 const CHARLIMIT = 12;
 
 const PostSchema = t.object({ post: t.string() });
 type PostInterface = t.Infer<typeof PostSchema>;
+
 const GetPostsSchema = t.object({
   limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
 });
@@ -28,7 +24,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       if (countGrapheme(post) > CHARLIMIT)
         return res.status(400).send("Character limit exceeded.");
 
-      const postRes = await rpc.call("com.atproto.repo.createRecord", {
+      const postRes = await ctx.rpc.call("com.atproto.repo.createRecord", {
         data: {
           repo: env.DID,
           collection: "app.bsky.feed.post",
@@ -42,7 +38,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
 
       const rkey = postRes.data.uri.split("/").pop()!;
 
-      await rpc.call("com.atproto.repo.createRecord", {
+      await ctx.rpc.call("com.atproto.repo.createRecord", {
         data: {
           repo: env.DID,
           collection: "app.bsky.feed.threadgate",

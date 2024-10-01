@@ -5,10 +5,13 @@ import { createDb, migrateToLatest } from "./db.js";
 import { env } from "./env.js";
 import { createRouter } from "./routes.js";
 import type { Database } from "./db.js";
+import { XRPC } from "@atcute/client";
+import { getRPC } from "./rpc.js";
 
 export type AppContext = {
   db: Database;
   logger: pino.Logger;
+  rpc: XRPC;
 };
 
 export class Server {
@@ -19,11 +22,12 @@ export class Server {
 
   static async create() {
     const logger = pino();
+    const rpc = await getRPC();
 
     const db = createDb(env.DB_PATH);
     await migrateToLatest(db);
 
-    const ctx = { db, logger };
+    const ctx = { db, logger, rpc };
     const server = fastify({ trustProxy: true });
 
     createRouter(server, ctx);
