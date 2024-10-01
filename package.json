@@ -1,0 +1,28 @@
+{
+  "name": "picosky",
+  "version": "0.0.0",
+  "description": "",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx src/index.ts | npx pino-pretty"
+  },
+  "dependencies": {
+    "@atcute/bluesky": "^1.0.7",
+    "@atcute/client": "^2.0.1",
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "fastify": "^5.0.0",
+    "kysely": "^0.27.4",
+    "pino-pretty": "^11.2.2",
+    "tschema": "^3.1.0",
+    "unicode-segmenter": "^0.10.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.5.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}
