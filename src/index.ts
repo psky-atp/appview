@@ -31,6 +31,10 @@ export class Server {
     const ctx = { db, logger, rpc };
     const server = fastify({ trustProxy: true });
     server.register(cors, { origin: "*" });
+    server.register(import("@fastify/rate-limit"), {
+      max: 50,
+      timeWindow: "1m",
+    });
 
     createRouter(server, ctx);
 

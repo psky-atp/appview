@@ -22,17 +22,25 @@ const stream = new PassThrough();
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
   server.post<{ Body: PostInterface }>(
     "/post",
-    { schema: { body: PostSchema } },
+    {
+      schema: { body: PostSchema },
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: "1m",
+        },
+      },
+    },
     async (req, res) => {
       const post = req.body.post;
 
       if (countGrapheme(post) > CHARLIMIT)
         return res.status(400).send("Character limit exceeded.");
-      else if (!countGrapheme(post))
+      else if (!countGrapheme(post.trim()))
         return res.status(400).send("Post cannot be empty.");
 
       const rkey = TID.now();
-      writeRecords(ctx.rpc, post, rkey);
+      //writeRecords(ctx.rpc, post, rkey);
       const record = { rkey: rkey, post: post, indexedAt: Date.now() };
       await ctx.db.insertInto("posts").values(record).executeTakeFirst();
       ctx.logger.info(record);

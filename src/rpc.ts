@@ -36,9 +36,11 @@ export const writeRecords = async (rpc: XRPC, post: string, rkey: string) => {
     },
   ];
 
-  await rpc.call("com.atproto.repo.applyWrites", {
-    data: { repo: env.DID, writes: writes },
-  });
+  await rpc
+    .call("com.atproto.repo.applyWrites", {
+      data: { repo: env.DID, writes: writes },
+    })
+    .catch((err) => console.log(err));
 
   return rkey;
 };
