@@ -1,4 +1,5 @@
 import { fastify, FastifyInstance } from "fastify";
+import cors from "@fastify/cors";
 import { pino } from "pino";
 
 import { createDb, migrateToLatest } from "./db.js";
@@ -29,6 +30,7 @@ export class Server {
 
     const ctx = { db, logger, rpc };
     const server = fastify({ trustProxy: true });
+    server.register(cors, { origin: "*" });
 
     createRouter(server, ctx);
 
