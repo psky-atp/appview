@@ -40,7 +40,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         return res.status(400).send("Post cannot be empty.");
 
       const rkey = TID.now();
-      //writeRecords(ctx.rpc, post, rkey);
+      writeRecords(ctx.rpc, post, rkey);
       const record = { rkey: rkey, post: post, indexedAt: Date.now() };
       await ctx.db.insertInto("posts").values(record).executeTakeFirst();
       ctx.logger.info(record);
