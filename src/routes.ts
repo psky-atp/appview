@@ -4,6 +4,8 @@ import { countGrapheme } from "unicode-segmenter";
 import * as t from "tschema";
 import { writeRecords } from "./rpc.js";
 import * as TID from "@atcute/tid";
+import { fastifyWebsocket } from "@fastify/websocket";
+import { PassThrough } from "stream";
 
 const CHARLIMIT = 12;
 
@@ -14,6 +16,8 @@ const GetPostsSchema = t.object({
   limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
 });
 type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
+
+const stream = new PassThrough();
 
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
   server.post<{ Body: PostInterface }>(
@@ -30,10 +34,20 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       const record = { rkey: rkey, post: post, indexedAt: Date.now() };
       await ctx.db.insertInto("posts").values(record).executeTakeFirst();
       ctx.logger.info(record);
+      stream.write(JSON.stringify(record));
 
       return res.status(200).send(record);
     },
   );
+
+  server.register(fastifyWebsocket);
+  server.register(async (fastify) => {
+    fastify.get("/subscribe", { websocket: true }, (socket) => {
+      stream.on("data", (data) => {
+        socket.send(data);
+      });
+    });
+  });
 
   server.get<{ Querystring: GetPostsInterface }>(
     "/posts",
