@@ -1,8 +1,8 @@
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
-import { env } from "./env.js";
 import * as t from "tschema";
+import { writeRecords } from "./rpc.js";
 
 const CHARLIMIT = 12;
 
@@ -24,34 +24,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       if (countGrapheme(post) > CHARLIMIT)
         return res.status(400).send("Character limit exceeded.");
 
-      const postRes = await ctx.rpc.call("com.atproto.repo.createRecord", {
-        data: {
-          repo: env.DID,
-          collection: "app.bsky.feed.post",
-          record: {
-            $type: "app.bsky.feed.post",
-            text: post,
-            createdAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      const rkey = postRes.data.uri.split("/").pop()!;
-
-      await ctx.rpc.call("com.atproto.repo.createRecord", {
-        data: {
-          repo: env.DID,
-          collection: "app.bsky.feed.threadgate",
-          rkey: rkey,
-          record: {
-            $type: "app.bsky.feed.threadgate",
-            post: postRes.data.uri,
-            allow: [],
-            createdAt: new Date().toISOString(),
-          },
-        },
-      });
-
+      const rkey = await writeRecords(ctx.rpc, post);
       const record = { rkey: rkey, post: post, indexedAt: Date.now() };
       await ctx.db.insertInto("posts").values(record).executeTakeFirst();
       ctx.logger.info(record);

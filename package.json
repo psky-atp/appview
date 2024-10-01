@@ -10,6 +10,7 @@
   "dependencies": {
     "@atcute/bluesky": "^1.0.7",
     "@atcute/client": "^2.0.1",
+    "@atcute/tid": "^1.0.0",
     "better-sqlite3": "^11.3.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
