@@ -3,6 +3,7 @@ import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
 import * as t from "tschema";
 import { writeRecords } from "./rpc.js";
+import * as TID from "@atcute/tid";
 
 const CHARLIMIT = 12;
 
@@ -24,7 +25,8 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       if (countGrapheme(post) > CHARLIMIT)
         return res.status(400).send("Character limit exceeded.");
 
-      const rkey = await writeRecords(ctx.rpc, post);
+      const rkey = TID.now();
+      writeRecords(ctx.rpc, post, rkey);
       const record = { rkey: rkey, post: post, indexedAt: Date.now() };
       await ctx.db.insertInto("posts").values(record).executeTakeFirst();
       ctx.logger.info(record);

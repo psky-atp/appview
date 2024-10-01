@@ -1,8 +1,6 @@
 import { XRPC, CredentialManager } from "@atcute/client";
-import * as TID from "@atcute/tid";
-
-import { env } from "./env.js";
 import { Brand, ComAtprotoRepoApplyWrites } from "@atcute/client/lexicons";
+import { env } from "./env.js";
 
 export const getRPC = async () => {
   const manager = new CredentialManager({ service: env.SERVICE });
@@ -11,8 +9,7 @@ export const getRPC = async () => {
   return rpc;
 };
 
-export const writeRecords = async (rpc: XRPC, post: string) => {
-  const rkey = TID.now();
+export const writeRecords = async (rpc: XRPC, post: string, rkey: string) => {
   const timestamp = new Date().toISOString();
 
   const writes: Brand.Union<ComAtprotoRepoApplyWrites.Create>[] = [
@@ -40,10 +37,7 @@ export const writeRecords = async (rpc: XRPC, post: string) => {
   ];
 
   await rpc.call("com.atproto.repo.applyWrites", {
-    data: {
-      repo: env.DID,
-      writes: writes,
-    },
+    data: { repo: env.DID, writes: writes },
   });
 
   return rkey;
