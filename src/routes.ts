@@ -28,6 +28,8 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
 
       if (countGrapheme(post) > CHARLIMIT)
         return res.status(400).send("Character limit exceeded.");
+      else if (!countGrapheme(post))
+        return res.status(400).send("Post cannot be empty.");
 
       const rkey = TID.now();
       writeRecords(ctx.rpc, post, rkey);
@@ -43,8 +45,12 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
   server.register(fastifyWebsocket);
   server.register(async (fastify) => {
     fastify.get("/subscribe", { websocket: true }, (socket) => {
-      stream.on("data", (data) => {
-        socket.send(data);
+      const callback = (data: any) => {
+        socket.send(String(data));
+      };
+      stream.on("data", callback);
+      socket.on("close", () => {
+        stream.removeListener("data", callback);
       });
     });
   });
