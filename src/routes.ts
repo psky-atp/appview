@@ -6,7 +6,8 @@ import { writeRecords } from "./rpc.js";
 import * as TID from "@atcute/tid";
 import { fastifyWebsocket } from "@fastify/websocket";
 
-const CHARLIMIT = 12;
+const GRAPHLIMIT = 12;
+const CHARLIMIT = 3000;
 
 const PostSchema = t.object({ post: t.string() });
 type PostInterface = t.Infer<typeof PostSchema>;
@@ -35,7 +36,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       async (req, res) => {
         const post = req.body.post;
 
-        if (countGrapheme(post) > CHARLIMIT)
+        if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT)
           return res.status(400).send("Character limit exceeded.");
         else if (!countGrapheme(post.trim()))
           return res.status(400).send("Post cannot be empty.");
