@@ -5,7 +5,6 @@ import * as t from "tschema";
 import { writeRecords } from "./rpc.js";
 import * as TID from "@atcute/tid";
 import { fastifyWebsocket } from "@fastify/websocket";
-import { PassThrough } from "stream";
 
 const CHARLIMIT = 12;
 
@@ -17,46 +16,46 @@ const GetPostsSchema = t.object({
 });
 type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
 
-const stream = new PassThrough();
-
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
-  server.post<{ Body: PostInterface }>(
-    "/post",
-    {
-      schema: { body: PostSchema },
-      config: {
-        rateLimit: {
-          max: 20,
-          timeWindow: "1m",
-        },
-      },
-    },
-    async (req, res) => {
-      const post = req.body.post;
-
-      if (countGrapheme(post) > CHARLIMIT)
-        return res.status(400).send("Character limit exceeded.");
-      else if (!countGrapheme(post.trim()))
-        return res.status(400).send("Post cannot be empty.");
-
-      const rkey = TID.now();
-      writeRecords(ctx.rpc, post, rkey);
-      const record = { rkey: rkey, post: post, indexedAt: Date.now() };
-      await ctx.db.insertInto("posts").values(record).executeTakeFirst();
-      ctx.logger.info(record);
-      stream.write(JSON.stringify(record));
-
-      return res.status(200).send(record);
-    },
-  );
-
   server.register(fastifyWebsocket);
   server.register(async (fastify) => {
+    const stream = fastify.websocketServer;
+    stream.setMaxListeners(0);
+    server.post<{ Body: PostInterface }>(
+      "/post",
+      {
+        schema: { body: PostSchema },
+        config: {
+          rateLimit: {
+            max: 20,
+            timeWindow: "1m",
+          },
+        },
+      },
+      async (req, res) => {
+        const post = req.body.post;
+
+        if (countGrapheme(post) > CHARLIMIT)
+          return res.status(400).send("Character limit exceeded.");
+        else if (!countGrapheme(post.trim()))
+          return res.status(400).send("Post cannot be empty.");
+
+        const rkey = TID.now();
+        writeRecords(ctx.rpc, post, rkey);
+        const record = { rkey: rkey, post: post, indexedAt: Date.now() };
+        await ctx.db.insertInto("posts").values(record).executeTakeFirst();
+        ctx.logger.info(record);
+        stream.emit("message", JSON.stringify(record));
+
+        return res.status(200).send(record);
+      },
+    );
+
     fastify.get("/subscribe", { websocket: true }, (socket) => {
       const callback = (data: any) => {
         socket.send(String(data));
       };
-      stream.on("data", callback);
+      stream.on("message", callback);
       socket.on("close", () => {
         stream.removeListener("data", callback);
       });
