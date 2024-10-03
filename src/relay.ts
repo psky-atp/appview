@@ -23,14 +23,15 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       post: post,
       indexedAt: Date.now(),
     };
-    const res = await ctx.db
-      .insertInto("posts")
-      .values(record)
-      .ignore()
-      .executeTakeFirst();
-    if (res === undefined) return;
-    ctx.logger.info(record);
-    server.websocketServer.emit("message", JSON.stringify(record));
+    try {
+      const res = await ctx.db
+        .insertInto("posts")
+        .values(record)
+        .executeTakeFirst();
+      if (res === undefined) return;
+      ctx.logger.info(record);
+      server.websocketServer.emit("message", JSON.stringify(record));
+    } catch {}
   });
 
   jetstream.start();
