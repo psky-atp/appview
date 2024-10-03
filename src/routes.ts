@@ -15,8 +15,8 @@ const GetPostsSchema = t.object({
 type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
 
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
-  server.register(async (fastify) => {
-    const stream = ctx.socketServer;
+  server.register(async () => {
+    const stream = server.websocketServer;
     stream.setMaxListeners(0);
     server.post<{ Body: PostInterface }>(
       "/post",
@@ -53,7 +53,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
       },
     );
 
-    fastify.get("/subscribe", { websocket: true }, (socket) => {
+    server.get("/subscribe", { websocket: true }, (socket) => {
       const callback = (data: any) => {
         socket.send(String(data));
       };

@@ -10,13 +10,11 @@ import { XRPC } from "@atcute/client";
 import { getRPC } from "./rpc.js";
 import { startJetstream } from "./relay.js";
 import fastifyWebsocket from "@fastify/websocket";
-import { WebSocketServer } from "ws";
 
 export type AppContext = {
   db: Database;
   logger: pino.Logger;
   rpc: XRPC;
-  socketServer: WebSocketServer;
 };
 
 export class Server {
@@ -28,12 +26,10 @@ export class Server {
   static async create() {
     const logger = pino();
     const rpc = await getRPC();
-    const socketServer = new WebSocketServer();
 
     const db = createDb(env.DB_PATH);
     await migrateToLatest(db);
 
-    const ctx = { db, logger, rpc, socketServer };
     const server = fastify({ trustProxy: true });
     server.register(cors, { origin: "*" });
     server.register(fastifyWebsocket);
@@ -41,9 +37,9 @@ export class Server {
       max: 50,
       timeWindow: "1m",
     });
-
+    const ctx = { db, logger, rpc };
     createRouter(server, ctx);
-    startJetstream(ctx);
+    startJetstream(server, ctx);
 
     server.listen({ port: env.PORT }, (err, address) => {
       if (err) {
