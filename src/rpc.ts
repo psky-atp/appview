@@ -1,5 +1,11 @@
 import { XRPC, CredentialManager } from "@atcute/client";
-import { Brand, ComAtprotoRepoApplyWrites } from "@atcute/client/lexicons";
+import {
+  AppBskyFeedPost,
+  AppBskyFeedThreadgate,
+  Brand,
+  ComAtprotoRepoApplyWrites,
+} from "@atcute/client/lexicons";
+import "@atcute/bluesky/lexicons";
 import { env } from "./env.js";
 
 export const getRPC = async () => {
@@ -21,7 +27,7 @@ export const writeRecords = async (rpc: XRPC, post: string, rkey: string) => {
         $type: "app.bsky.feed.post",
         text: post,
         createdAt: timestamp,
-      },
+      } as AppBskyFeedPost.Record,
     },
     {
       $type: "com.atproto.repo.applyWrites#create",
@@ -32,7 +38,7 @@ export const writeRecords = async (rpc: XRPC, post: string, rkey: string) => {
         post: `at://${env.DID}/app.bsky.feed.post/${rkey}`,
         allow: [],
         createdAt: timestamp,
-      },
+      } as AppBskyFeedThreadgate.Record,
     },
   ];
 
