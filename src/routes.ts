@@ -5,6 +5,7 @@ import * as t from "tschema";
 import { writeRecords } from "./rpc.js";
 import * as TID from "@atcute/tid";
 import { fastifyWebsocket } from "@fastify/websocket";
+import { env } from "./env.js";
 
 const GRAPHLIMIT = 12;
 const CHARLIMIT = 3000;
@@ -43,7 +44,12 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
 
         const rkey = TID.now();
         writeRecords(ctx.rpc, post, rkey);
-        const record = { rkey: rkey, post: post, indexedAt: Date.now() };
+        const record = {
+          rkey: rkey,
+          did: env.DID,
+          post: post,
+          indexedAt: Date.now(),
+        };
         await ctx.db.insertInto("posts").values(record).executeTakeFirst();
         ctx.logger.info(record);
         stream.emit("message", JSON.stringify(record));

@@ -15,6 +15,7 @@ export type DatabaseSchema = {
 
 export type Post = {
   rkey: string;
+  did: string;
   post: string;
   indexedAt: number;
 };
@@ -36,6 +37,7 @@ migrations["001"] = {
       .addColumn("rkey", "text", (col) => col.primaryKey())
       .addColumn("post", "text", (col) => col.notNull())
       .addColumn("indexedAt", "integer", (col) => col.notNull())
+      .addColumn("did", "text", (col) => col.notNull())
       .execute();
   },
   async down(db: Kysely<unknown>) {
