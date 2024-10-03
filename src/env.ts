@@ -3,6 +3,9 @@ import { cleanEnv, port, str, testOnly, url } from "envalid";
 
 dotenv.config();
 
+export const GRAPHLIMIT = 12;
+export const CHARLIMIT = 1000;
+
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({
     devDefault: testOnly("test"),

@@ -4,11 +4,7 @@ import { countGrapheme } from "unicode-segmenter";
 import * as t from "tschema";
 import { writeRecords } from "./rpc.js";
 import * as TID from "@atcute/tid";
-import { fastifyWebsocket } from "@fastify/websocket";
-import { env } from "./env.js";
-
-const GRAPHLIMIT = 12;
-const CHARLIMIT = 1000;
+import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
 
 const PostSchema = t.object({ post: t.string() });
 type PostInterface = t.Infer<typeof PostSchema>;
@@ -19,9 +15,8 @@ const GetPostsSchema = t.object({
 type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
 
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
-  server.register(fastifyWebsocket);
   server.register(async (fastify) => {
-    const stream = fastify.websocketServer;
+    const stream = ctx.socketServer;
     stream.setMaxListeners(0);
     server.post<{ Body: PostInterface }>(
       "/post",
@@ -43,10 +38,10 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           return res.status(400).send("Post cannot be empty.");
 
         const rkey = TID.now();
+        const uri = `at://${env.DID}/social.psky.feed.post/${rkey}`;
         writeRecords(ctx.rpc, post, rkey);
         const record = {
-          rkey: rkey,
-          did: env.DID,
+          uri: uri,
           post: post,
           indexedAt: Date.now(),
         };
