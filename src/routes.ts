@@ -8,7 +8,7 @@ import { fastifyWebsocket } from "@fastify/websocket";
 import { env } from "./env.js";
 
 const GRAPHLIMIT = 12;
-const CHARLIMIT = 3000;
+const CHARLIMIT = 1000;
 
 const PostSchema = t.object({ post: t.string() });
 type PostInterface = t.Infer<typeof PostSchema>;

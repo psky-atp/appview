@@ -1,7 +1,7 @@
 import { XRPC, CredentialManager } from "@atcute/client";
 import {
   AppBskyFeedPost,
-  AppBskyFeedThreadgate,
+  SocialPskyFeedPost,
   Brand,
   ComAtprotoRepoApplyWrites,
 } from "@atcute/client/lexicons";
@@ -31,14 +31,12 @@ export const writeRecords = async (rpc: XRPC, post: string, rkey: string) => {
     },
     {
       $type: "com.atproto.repo.applyWrites#create",
-      collection: "app.bsky.feed.threadgate",
+      collection: "social.psky.feed.post",
       rkey: rkey,
       value: {
-        $type: "app.bsky.feed.threadgate",
-        post: `at://${env.DID}/app.bsky.feed.post/${rkey}`,
-        allow: [],
-        createdAt: timestamp,
-      } as AppBskyFeedThreadgate.Record,
+        $type: "social.psky.feed.post",
+        text: post,
+      } as SocialPskyFeedPost.Record,
     },
   ];
 

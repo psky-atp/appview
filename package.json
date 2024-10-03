@@ -24,6 +24,7 @@
     "unicode-segmenter": "^0.10.1"
   },
   "devDependencies": {
+    "@atcute/lex-cli": "^1.0.2",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.5.5",
     "@types/ws": "^8.5.12",
