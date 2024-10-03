@@ -10,11 +10,13 @@ import { XRPC } from "@atcute/client";
 import { getRPC } from "./rpc.js";
 import { startJetstream } from "./relay.js";
 import fastifyWebsocket from "@fastify/websocket";
+import { resolveDid } from "./utils.js";
 
 export type AppContext = {
   db: Database;
   logger: pino.Logger;
   rpc: XRPC;
+  handle: string;
 };
 
 export class Server {
@@ -30,6 +32,22 @@ export class Server {
     const db = createDb(env.DB_PATH);
     await migrateToLatest(db);
 
+    let handle;
+    const res = await db
+      .selectFrom("identities")
+      .where("did", "=", env.DID)
+      .select("handle")
+      .executeTakeFirst();
+    if (res === undefined) {
+      handle = await resolveDid(env.DID);
+      await db
+        .insertInto("identities")
+        .values({ did: env.DID, handle: handle })
+        .execute();
+    } else {
+      handle = res.handle;
+    }
+
     const server = fastify({ trustProxy: true });
     server.register(cors, { origin: "*" });
     server.register(fastifyWebsocket);
@@ -37,7 +55,7 @@ export class Server {
       max: 50,
       timeWindow: "1m",
     });
-    const ctx = { db, logger, rpc };
+    const ctx = { db, logger, rpc, handle };
     createRouter(server, ctx);
     startJetstream(server, ctx);
 

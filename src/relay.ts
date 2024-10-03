@@ -3,6 +3,7 @@ import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
 import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
+import { resolveDid } from "./utils.js";
 
 export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   const jetstream = new Jetstream({
@@ -18,9 +19,23 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
     else if (!countGrapheme(post.trim())) return;
 
+    const identity = await ctx.db
+      .selectFrom("identities")
+      .where("did", "=", event.did)
+      .select("handle")
+      .executeTakeFirst();
+    const handle =
+      identity === undefined ? await resolveDid(event.did) : identity.handle;
+    if (identity === undefined)
+      await ctx.db
+        .insertInto("identities")
+        .values({ did: event.did, handle: handle })
+        .execute();
+
     const record = {
       uri: uri,
       post: post,
+      handle: handle,
       indexedAt: Date.now(),
     };
     try {
@@ -32,6 +47,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       ctx.logger.info(record);
       server.websocketServer.emit("message", JSON.stringify(record));
     } catch (err) {
+      ctx.logger.error(`ERROR: ${record}`);
       ctx.logger.error(err);
     }
   });

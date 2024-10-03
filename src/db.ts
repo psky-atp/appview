@@ -11,12 +11,19 @@ import {
 
 export type DatabaseSchema = {
   posts: Post;
+  identities: Identity;
 };
 
 export type Post = {
   uri: string;
   post: string;
+  handle: string;
   indexedAt: number;
+};
+
+export type Identity = {
+  did: string;
+  handle: string;
 };
 
 // Migrations
@@ -35,7 +42,14 @@ migrations["001"] = {
       .createTable("posts")
       .addColumn("uri", "text", (col) => col.primaryKey())
       .addColumn("post", "text", (col) => col.notNull())
+      .addColumn("handle", "text")
       .addColumn("indexedAt", "integer", (col) => col.notNull())
+      .execute();
+
+    await db.schema
+      .createTable("identities")
+      .addColumn("did", "text", (col) => col.primaryKey())
+      .addColumn("handle", "text", (col) => col.notNull())
       .execute();
   },
   async down(db: Kysely<unknown>) {
