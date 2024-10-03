@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
 import * as t from "tschema";
-import { writeRecords } from "./rpc.js";
+import { writeRecord } from "./rpc.js";
 import * as TID from "@atcute/tid";
 import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
 
@@ -39,7 +39,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
 
         const rkey = TID.now();
         const uri = `at://${env.DID}/social.psky.feed.post/${rkey}`;
-        writeRecords(ctx.rpc, post, rkey);
+        writeRecord(ctx.rpc, post, rkey);
         const record = {
           uri: uri,
           post: post,
