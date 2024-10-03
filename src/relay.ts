@@ -26,7 +26,8 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     const res = await ctx.db
       .insertInto("posts")
       .values(record)
-      .executeTakeFirst();
+      .executeTakeFirst()
+      .catch();
     if (res === undefined) return;
     ctx.logger.info(record);
     server.websocketServer.emit("message", JSON.stringify(record));
