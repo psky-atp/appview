@@ -47,7 +47,6 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       ctx.logger.info(record);
       server.websocketServer.emit("message", JSON.stringify(record));
     } catch (err) {
-      ctx.logger.error(`ERROR: ${record}`);
       ctx.logger.error(err);
     }
   });
