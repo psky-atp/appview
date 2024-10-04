@@ -11,7 +11,7 @@ declare module "@atcute/client/lexicons" {
       /**
        * Text content. \
        * Maximum string length: 1000 \
-       * Maximum grapheme length: 12
+       * Maximum grapheme length: 64
        */
       text: string;
     }

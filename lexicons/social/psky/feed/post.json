@@ -15,7 +15,7 @@
           "text": {
             "type": "string",
             "maxLength": 1000,
-            "maxGraphemes": 12,
+            "maxGraphemes": 64,
             "description": "Text content."
           }
         }
