@@ -51,5 +51,11 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     }
   });
 
+  jetstream.onDelete("social.psky.feed.post", async (event) => {
+    const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
+    await ctx.db.deleteFrom("posts").where("uri", "=", uri).executeTakeFirst();
+    ctx.logger.info(`Deleted post: ${uri}`);
+  });
+
   jetstream.start();
 }
