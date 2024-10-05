@@ -84,6 +84,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         .selectFrom("posts")
         .orderBy("indexed_at", "desc")
         .limit(req.query.limit)
+        .innerJoin("accounts", "posts.account_did", "accounts.did")
         .selectAll()
         .execute();
 
