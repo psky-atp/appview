@@ -5,6 +5,7 @@ import {
   SqliteDialect,
   Migration,
   MigrationProvider,
+  CompiledQuery,
 } from "kysely";
 
 // Types
@@ -69,11 +70,13 @@ migrations["001"] = {
 // APIs
 
 export const createDb = (location: string): Database => {
-  return new Kysely<DatabaseSchema>({
+  const db = new Kysely<DatabaseSchema>({
     dialect: new SqliteDialect({
       database: new SqliteDb(location),
     }),
   });
+  db.executeQuery(CompiledQuery.raw("PRAGMA journal_mode = WAL"));
+  return db;
 };
 
 export const migrateToLatest = async (db: Database) => {
