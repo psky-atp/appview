@@ -8,6 +8,7 @@ import { resolveDid } from "./utils.js";
 export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   const jetstream = new Jetstream({
     wantedCollections: ["social.psky.*"],
+    endpoint: "wss://jetstream2.us-west.bsky.network/subscribe",
   });
 
   jetstream.on("error", (err) => console.error(err));
@@ -55,6 +56,24 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     await ctx.db.deleteFrom("posts").where("uri", "=", uri).executeTakeFirst();
     ctx.logger.info(`Deleted post: ${uri}`);
+  });
+
+  jetstream.on("identity", async (event) => {
+    const identity = await ctx.db
+      .selectFrom("identities")
+      .where("did", "=", event.did)
+      .select("handle")
+      .executeTakeFirst();
+    if (identity !== undefined && event.identity.handle) {
+      await ctx.db
+        .updateTable("identities")
+        .set({ did: event.did, handle: event.identity.handle })
+        .where("did", "=", event.did)
+        .execute();
+      ctx.logger.info(
+        `Updated handle: ${identity.handle} -> ${event.identity.handle}`,
+      );
+    }
   });
 
   jetstream.start();
