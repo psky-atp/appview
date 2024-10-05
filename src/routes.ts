@@ -88,7 +88,17 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         .selectAll()
         .execute();
 
-      res.code(200).send(posts);
+      res.code(200).send(
+        posts.map((rec) => ({
+          did: rec.did,
+          rkey: rec.uri.split("/").pop(),
+          post: rec.post,
+          handle:
+            rec.handle === "psky.social" ? "anon.psky.social" : rec.handle,
+          nickname: rec.nickname,
+          indexedAt: rec.indexed_at,
+        })),
+      );
     },
   );
 };
