@@ -43,7 +43,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         const record = {
           uri: uri,
           post: post,
-          handle: ctx.handle,
+          handle: `anon.${ctx.handle}`,
           indexedAt: Date.now(),
         };
         await ctx.db.insertInto("posts").values(record).executeTakeFirst();
