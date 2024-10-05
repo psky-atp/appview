@@ -5,6 +5,31 @@ import { countGrapheme } from "unicode-segmenter";
 import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
 import { resolveDid } from "./utils.js";
 
+// TODO: make it not horrible sorry rn im too lazy and i need sleep
+//
+const getIdentity = async (ctx: AppContext, did: string, nickname?: string) => {
+  const account = await ctx.db
+    .selectFrom("accounts")
+    .where("did", "=", did)
+    .selectAll()
+    .executeTakeFirst();
+  const handle = account === undefined ? await resolveDid(did) : account.handle;
+  let res;
+  if (account === undefined) {
+    await ctx.db
+      .insertInto("accounts")
+      .values({ did: did, handle: handle, nickname: nickname })
+      .execute();
+  } else if (!account.nickname && nickname !== undefined) {
+    res = await ctx.db
+      .updateTable("accounts")
+      .set({ nickname: nickname })
+      .where("did", "=", did)
+      .execute();
+  }
+  return { nickname: account?.nickname, handle: handle };
+};
+
 export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   const jetstream = new Jetstream({
     wantedCollections: ["social.psky.*"],
@@ -13,6 +38,33 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
 
   jetstream.on("error", (err) => console.error(err));
 
+  jetstream.onCreate("social.psky.actor.profile", async (event) => {
+    const nick = event.commit.record.nickname;
+    if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
+      return;
+
+    await getIdentity(ctx, event.did, nick);
+    ctx.logger.info(`Created profile ${event.did}`);
+  });
+
+  //jetstream.onUpdate("social.psky.actor.profile", async (event) => {
+  //  const nick = event.commit.record.nickname;
+  //  if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
+  //    return;
+  //
+  //  await getIdentity(ctx, event.did, nick);
+  //  ctx.logger.info(`Created profile ${event.did}`);
+  //});
+
+  jetstream.onDelete("social.psky.actor.profile", async (event) => {
+    await ctx.db
+      .updateTable("accounts")
+      .set({ nickname: "" })
+      .where("did", "=", event.did)
+      .executeTakeFirst();
+    ctx.logger.info(`Deleted profile: ${event.did}`);
+  });
+
   jetstream.onCreate("social.psky.feed.post", async (event) => {
     if (event.did.includes(env.DID)) return; //TODO: remove this later
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
@@ -20,26 +72,15 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
     else if (!countGrapheme(post.trim())) return;
 
-    const account = await ctx.db
-      .selectFrom("accounts")
-      .where("did", "=", event.did)
-      .selectAll()
-      .executeTakeFirst();
-    const handle =
-      account === undefined ? await resolveDid(event.did) : account.handle;
-    if (account === undefined)
-      await ctx.db
-        .insertInto("accounts")
-        .values({ did: event.did, handle: handle })
-        .execute();
+    const identity = await getIdentity(ctx, event.did);
 
     const timestamp = Date.now();
     const record = {
       did: event.did,
       rkey: event.commit.rkey,
       post: post,
-      handle: handle,
-      nickname: account?.nickname,
+      handle: identity.handle,
+      nickname: identity.nickname,
       indexedAt: timestamp,
     };
 
