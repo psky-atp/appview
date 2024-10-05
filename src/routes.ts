@@ -38,17 +38,28 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           return res.status(400).send("Post cannot be empty.");
 
         const rkey = TID.now();
-        const uri = `at://${env.DID}/social.psky.feed.post/${rkey}`;
         writeRecord(ctx.rpc, post, rkey);
+
+        const timestamp = Date.now();
         const record = {
-          uri: uri,
+          did: env.DID,
+          rkey: rkey,
           post: post,
-          handle: `anon.${ctx.handle}`,
-          indexedAt: Date.now(),
+          handle: "anon.psky.social", // TODO: HARDCODED
+          indexedAt: timestamp,
         };
-        await ctx.db.insertInto("posts").values(record).executeTakeFirst();
         ctx.logger.info(record);
         stream.emit("message", JSON.stringify(record));
+
+        await ctx.db
+          .insertInto("posts")
+          .values({
+            uri: `at://${env.DID}/social.psky.feed.post/${rkey}`,
+            post: post,
+            account_did: env.DID,
+            indexed_at: timestamp,
+          })
+          .executeTakeFirst();
 
         return res.status(200).send(record);
       },
@@ -71,7 +82,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
     async (req, res) => {
       const posts = await ctx.db
         .selectFrom("posts")
-        .orderBy("indexedAt", "desc")
+        .orderBy("indexed_at", "desc")
         .limit(req.query.limit)
         .selectAll()
         .execute();
