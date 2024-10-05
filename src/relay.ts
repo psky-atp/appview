@@ -20,7 +20,7 @@ const getIdentity = async (ctx: AppContext, did: string, nickname?: string) => {
       .insertInto("accounts")
       .values({ did: did, handle: handle, nickname: nickname })
       .execute();
-  } else if (!account.nickname && nickname !== undefined) {
+  } else if (nickname !== undefined) {
     res = await ctx.db
       .updateTable("accounts")
       .set({ nickname: nickname })
@@ -47,14 +47,14 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     ctx.logger.info(`Created profile ${event.did}`);
   });
 
-  //jetstream.onUpdate("social.psky.actor.profile", async (event) => {
-  //  const nick = event.commit.record.nickname;
-  //  if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
-  //    return;
-  //
-  //  await getIdentity(ctx, event.did, nick);
-  //  ctx.logger.info(`Created profile ${event.did}`);
-  //});
+  jetstream.onUpdate("social.psky.actor.profile", async (event) => {
+    const nick = event.commit.record.nickname;
+    if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
+      return;
+
+    await getIdentity(ctx, event.did, nick);
+    ctx.logger.info(`Created profile ${event.did}`);
+  });
 
   jetstream.onDelete("social.psky.actor.profile", async (event) => {
     await ctx.db
