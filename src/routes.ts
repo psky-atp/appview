@@ -11,6 +11,7 @@ type PostInterface = t.Infer<typeof PostSchema>;
 
 const GetPostsSchema = t.object({
   limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
+  cursor: t.optional(t.integer({ minimum: 0 })),
 });
 type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
 
@@ -84,12 +85,14 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         .selectFrom("posts")
         .orderBy("indexed_at", "desc")
         .limit(req.query.limit)
+        .offset(req.query.cursor ?? 0)
         .innerJoin("accounts", "posts.account_did", "accounts.did")
         .selectAll()
         .execute();
 
-      res.code(200).send(
-        posts.map((rec) => ({
+      const data = {
+        cursor: posts.length + (req.query.cursor ?? 0),
+        posts: posts.map((rec) => ({
           did: rec.did,
           rkey: rec.uri.split("/").pop(),
           post: rec.post,
@@ -98,7 +101,9 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           nickname: rec.nickname,
           indexedAt: rec.indexed_at,
         })),
-      );
+      };
+
+      res.code(200).send(data);
     },
   );
 };

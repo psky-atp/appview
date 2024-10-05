@@ -19,7 +19,8 @@ const getIdentity = async (ctx: AppContext, did: string, nickname?: string) => {
     await ctx.db
       .insertInto("accounts")
       .values({ did: did, handle: handle, nickname: nickname })
-      .execute();
+      .execute()
+      .catch((err) => ctx.logger.error(err));
   } else if (nickname !== undefined) {
     res = await ctx.db
       .updateTable("accounts")
