@@ -20,29 +20,38 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
     else if (!countGrapheme(post.trim())) return;
 
-    const identity = await ctx.db
-      .selectFrom("identities")
+    const account = await ctx.db
+      .selectFrom("accounts")
       .where("did", "=", event.did)
-      .select("handle")
+      .selectAll()
       .executeTakeFirst();
     const handle =
-      identity === undefined ? await resolveDid(event.did) : identity.handle;
-    if (identity === undefined)
+      account === undefined ? await resolveDid(event.did) : account.handle;
+    if (account === undefined)
       await ctx.db
-        .insertInto("identities")
+        .insertInto("accounts")
         .values({ did: event.did, handle: handle })
         .execute();
 
+    const timestamp = Date.now();
     const record = {
-      uri: uri,
+      did: event.did,
+      rkey: event.commit.rkey,
       post: post,
       handle: handle,
-      indexedAt: Date.now(),
+      nickname: account?.nickname,
+      indexedAt: timestamp,
     };
+
     try {
       const res = await ctx.db
         .insertInto("posts")
-        .values(record)
+        .values({
+          uri: uri,
+          post: post,
+          account_did: event.did,
+          indexed_at: timestamp,
+        })
         .executeTakeFirst();
       if (res === undefined) return;
       ctx.logger.info(record);
@@ -60,13 +69,13 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
 
   jetstream.on("identity", async (event) => {
     const identity = await ctx.db
-      .selectFrom("identities")
+      .selectFrom("accounts")
       .where("did", "=", event.did)
       .select("handle")
       .executeTakeFirst();
     if (identity !== undefined && event.identity.handle) {
       await ctx.db
-        .updateTable("identities")
+        .updateTable("accounts")
         .set({ did: event.did, handle: event.identity.handle })
         .where("did", "=", event.did)
         .execute();

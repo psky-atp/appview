@@ -11,19 +11,20 @@ import {
 
 export type DatabaseSchema = {
   posts: Post;
-  identities: Identity;
+  accounts: Account;
 };
 
 export type Post = {
   uri: string;
   post: string;
-  handle: string;
-  indexedAt: number;
+  account_did: string;
+  indexed_at: number;
 };
 
-export type Identity = {
+export type Account = {
   did: string;
   handle: string;
+  nickname?: string;
 };
 
 // Migrations
@@ -42,14 +43,22 @@ migrations["001"] = {
       .createTable("posts")
       .addColumn("uri", "text", (col) => col.primaryKey())
       .addColumn("post", "text", (col) => col.notNull())
-      .addColumn("handle", "text")
-      .addColumn("indexedAt", "integer", (col) => col.notNull())
+      .addColumn("account_did", "text", (col) => col.notNull())
+      .addColumn("indexed_at", "integer", (col) => col.notNull())
+      .addForeignKeyConstraint(
+        "account_foreign",
+        ["account_did"],
+        "accounts",
+        ["did"],
+        (col) => col.onDelete("cascade"),
+      )
       .execute();
 
     await db.schema
-      .createTable("identities")
+      .createTable("accounts")
       .addColumn("did", "text", (col) => col.primaryKey())
       .addColumn("handle", "text", (col) => col.notNull())
+      .addColumn("nickname", "text")
       .execute();
   },
   async down(db: Kysely<unknown>) {

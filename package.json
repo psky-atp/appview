@@ -5,7 +5,8 @@
   "license": "BSD-3-Clause",
   "type": "module",
   "scripts": {
-    "start": "npx tsx src/index.ts | npx pino-pretty"
+    "start": "npx tsx src/index.ts | npx pino-pretty",
+    "lex": "npx lex-cli generate ./lexicons/social/psky/**/*.json -o ./src/lib/lexicon.ts"
   },
   "dependencies": {
     "@atcute/bluesky": "^1.0.7",
