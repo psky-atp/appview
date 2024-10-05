@@ -64,6 +64,7 @@ migrations["001"] = {
   },
   async down(db: Kysely<unknown>) {
     await db.schema.dropTable("posts").execute();
+    await db.schema.dropTable("accounts").execute();
   },
 };
 
