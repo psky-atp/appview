@@ -45,7 +45,6 @@ migrations["001"] = {
       .createTable("posts")
       .addColumn("uri", "text", (col) => col.primaryKey())
       .addColumn("post", "text", (col) => col.notNull())
-      .addColumn("facets", "text")
       .addColumn("account_did", "text", (col) => col.notNull())
       .addColumn("indexed_at", "integer", (col) => col.notNull())
       .addForeignKeyConstraint(
@@ -67,6 +66,15 @@ migrations["001"] = {
   async down(db: Kysely<unknown>) {
     await db.schema.dropTable("posts").execute();
     await db.schema.dropTable("accounts").execute();
+  },
+};
+
+migrations["002"] = {
+  async up(db: Kysely<unknown>) {
+    await db.schema.alterTable("posts").addColumn("facets", "text").execute();
+  },
+  async down(db: Kysely<unknown>) {
+    await db.schema.dropTable("posts").execute();
   },
 };
 
