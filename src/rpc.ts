@@ -1,7 +1,11 @@
 import { XRPC, CredentialManager } from "@atcute/client";
-import { SocialPskyFeedPost } from "@atcute/client/lexicons";
+import {
+  SocialPskyFeedPost,
+  SocialPskyRichtextFacet,
+} from "@atcute/client/lexicons";
 import "@atcute/bluesky/lexicons";
 import { env } from "./env.js";
+import { FacetsInterface } from "./lib/schemas.js";
 
 export const getRPC = async () => {
   const manager = new CredentialManager({ service: env.SERVICE });
@@ -10,7 +14,12 @@ export const getRPC = async () => {
   return rpc;
 };
 
-export const writeRecord = async (rpc: XRPC, post: string, rkey: string) => {
+export const writeRecord = async (
+  rpc: XRPC,
+  rkey: string,
+  text: string,
+  facets?: FacetsInterface,
+) => {
   await rpc
     .call("com.atproto.repo.putRecord", {
       data: {
@@ -19,7 +28,8 @@ export const writeRecord = async (rpc: XRPC, post: string, rkey: string) => {
         rkey: rkey,
         record: {
           $type: "social.psky.feed.post",
-          text: post,
+          text,
+          facets,
         } as SocialPskyFeedPost.Record,
       },
     })
