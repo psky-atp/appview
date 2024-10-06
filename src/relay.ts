@@ -70,6 +70,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     if (event.did.includes(env.DID)) return; //TODO: remove this later
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     const post = event.commit.record.text;
+    const facets = event.commit.record.facets;
     if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
     else if (!countGrapheme(post.trim())) return;
 
@@ -80,6 +81,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       did: event.did,
       rkey: event.commit.rkey,
       post: post,
+      facets: facets,
       handle: identity.handle,
       nickname: identity.nickname,
       indexedAt: timestamp,
@@ -91,6 +93,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         .values({
           uri: uri,
           post: post,
+          facets: facets ? JSON.stringify(facets) : undefined,
           account_did: event.did,
           indexed_at: timestamp,
         })

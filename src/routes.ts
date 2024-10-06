@@ -1,19 +1,15 @@
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
-import * as t from "tschema";
 import { writeRecord } from "./rpc.js";
 import * as TID from "@atcute/tid";
 import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
-
-const PostSchema = t.object({ post: t.string() });
-type PostInterface = t.Infer<typeof PostSchema>;
-
-const GetPostsSchema = t.object({
-  limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
-  cursor: t.optional(t.integer({ minimum: 0 })),
-});
-type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
+import {
+  GetPostsInterface,
+  GetPostsSchema,
+  PostInterface,
+  PostSchema,
+} from "./lib/schemas.js";
 
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
   server.register(async () => {
@@ -31,21 +27,25 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         },
       },
       async (req, res) => {
-        const post = req.body.post;
+        const post = req.body;
 
-        if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT)
+        if (
+          countGrapheme(post.text) > GRAPHLIMIT ||
+          post.text.length > CHARLIMIT
+        )
           return res.status(400).send("Character limit exceeded.");
-        else if (!countGrapheme(post.trim()))
+        else if (!countGrapheme(post.text.trim()))
           return res.status(400).send("Post cannot be empty.");
 
         const rkey = TID.now();
-        writeRecord(ctx.rpc, post, rkey);
+        writeRecord(ctx.rpc, rkey, post.text, post.facets);
 
         const timestamp = Date.now();
         const record = {
           did: env.DID,
           rkey: rkey,
-          post: post,
+          post: post.text,
+          facets: post.facets,
           handle: "anon.psky.social", // TODO: HARDCODED
           indexedAt: timestamp,
         };
@@ -56,7 +56,8 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           .insertInto("posts")
           .values({
             uri: `at://${env.DID}/social.psky.feed.post/${rkey}`,
-            post: post,
+            post: post.text,
+            facets: post.facets ? JSON.stringify(post.facets) : undefined,
             account_did: env.DID,
             indexed_at: timestamp,
           })
@@ -96,6 +97,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           did: rec.did,
           rkey: rec.uri.split("/").pop(),
           post: rec.post,
+          facets: rec.facets ? JSON.parse(rec.facets) : undefined,
           handle:
             rec.handle === "psky.social" ? "anon.psky.social" : rec.handle,
           nickname: rec.nickname,

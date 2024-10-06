@@ -18,6 +18,7 @@ export type DatabaseSchema = {
 export type Post = {
   uri: string;
   post: string;
+  facets?: string; // JSON string
   account_did: string;
   indexed_at: number;
 };
@@ -44,6 +45,7 @@ migrations["001"] = {
       .createTable("posts")
       .addColumn("uri", "text", (col) => col.primaryKey())
       .addColumn("post", "text", (col) => col.notNull())
+      .addColumn("facets", "text")
       .addColumn("account_did", "text", (col) => col.notNull())
       .addColumn("indexed_at", "integer", (col) => col.notNull())
       .addForeignKeyConstraint(
