@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { cleanEnv, port, str, testOnly, url } from "envalid";
+import { cleanEnv, port, str, testOnly } from "envalid";
 
 dotenv.config();
 
@@ -13,7 +13,4 @@ export const env = cleanEnv(process.env, {
   }),
   PORT: port({ devDefault: testOnly(3000) }),
   DB_PATH: str({ devDefault: ":memory:" }),
-  DID: str(),
-  PASSWORD: str(),
-  SERVICE: url({ default: "https://bsky.social" }),
 });

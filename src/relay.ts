@@ -67,7 +67,6 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   });
 
   jetstream.onCreate("social.psky.feed.post", async (event) => {
-    if (event.did.includes(env.DID)) return; //TODO: remove this later
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     const post = event.commit.record.text;
     const facets = event.commit.record.facets;
