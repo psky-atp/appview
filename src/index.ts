@@ -30,7 +30,7 @@ export class Server {
     server.register(cors, { origin: "*" });
     server.register(fastifyWebsocket);
     server.register(import("@fastify/rate-limit"), {
-      max: 100,
+      max: 300,
       timeWindow: "1m",
     });
     const ctx = { db, logger };
