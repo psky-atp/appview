@@ -77,6 +77,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
 
     const timestamp = Date.now();
     const record = {
+      $type: "social.psky.feed.post#create",
       did: event.did,
       rkey: event.commit.rkey,
       post: post,
@@ -98,8 +99,8 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         })
         .executeTakeFirst();
       if (res === undefined) return;
-      ctx.logger.info(record);
       server.websocketServer.emit("message", JSON.stringify(record));
+      ctx.logger.info(record);
     } catch (err) {
       ctx.logger.error(err);
     }
@@ -108,6 +109,12 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   jetstream.onDelete("social.psky.feed.post", async (event) => {
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     await ctx.db.deleteFrom("posts").where("uri", "=", uri).executeTakeFirst();
+    const record = {
+      $type: "social.psky.feed.post#delete",
+      did: event.did,
+      rkey: event.commit.rkey,
+    };
+    server.websocketServer.emit("message", JSON.stringify(record));
     ctx.logger.info(`Deleted post: ${uri}`);
   });
 
