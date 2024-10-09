@@ -21,6 +21,7 @@ export type Post = {
   facets?: string; // JSON string
   account_did: string;
   indexed_at: number;
+  updated_at?: number;
 };
 
 export type Account = {
@@ -72,6 +73,18 @@ migrations["001"] = {
 migrations["002"] = {
   async up(db: Kysely<unknown>) {
     await db.schema.alterTable("posts").addColumn("facets", "text").execute();
+  },
+  async down(db: Kysely<unknown>) {
+    await db.schema.dropTable("posts").execute();
+  },
+};
+
+migrations["003"] = {
+  async up(db: Kysely<unknown>) {
+    await db.schema
+      .alterTable("posts")
+      .addColumn("updated_at", "integer")
+      .execute();
   },
   async down(db: Kysely<unknown>) {
     await db.schema.dropTable("posts").execute();

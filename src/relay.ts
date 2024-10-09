@@ -100,10 +100,35 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         .executeTakeFirst();
       if (res === undefined) return;
       server.websocketServer.emit("message", JSON.stringify(record));
-      ctx.logger.info(record);
+      ctx.logger.info(`Created post: ${uri}`);
     } catch (err) {
       ctx.logger.error(err);
     }
+  });
+
+  jetstream.onUpdate("social.psky.feed.post", async (event) => {
+    const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
+    const facets = event.commit.record.facets;
+    const timestamp = Date.now();
+    await ctx.db
+      .updateTable("posts")
+      .set({
+        post: event.commit.record.text,
+        facets: facets ? JSON.stringify(facets) : undefined,
+        updated_at: timestamp,
+      })
+      .where("uri", "=", uri)
+      .executeTakeFirst();
+    const record = {
+      $type: "social.psky.feed.post#update",
+      did: event.did,
+      rkey: event.commit.rkey,
+      post: event.commit.record.text,
+      facets: facets,
+      updatedAt: timestamp,
+    };
+    server.websocketServer.emit("message", JSON.stringify(record));
+    ctx.logger.info(`Updated post: ${uri}`);
   });
 
   jetstream.onDelete("social.psky.feed.post", async (event) => {
