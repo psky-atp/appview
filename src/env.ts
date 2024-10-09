@@ -3,8 +3,8 @@ import { cleanEnv, port, str, testOnly } from "envalid";
 
 dotenv.config();
 
-export const GRAPHLIMIT = 64;
-export const CHARLIMIT = 1000;
+export const GRAPHLIMIT = 256;
+export const CHARLIMIT = 2560;
 
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({

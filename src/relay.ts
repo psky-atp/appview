@@ -2,7 +2,7 @@ import { Jetstream } from "@skyware/jetstream";
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { countGrapheme } from "unicode-segmenter";
-import { CHARLIMIT, env, GRAPHLIMIT } from "./env.js";
+import { CHARLIMIT, GRAPHLIMIT } from "./env.js";
 import { resolveDid } from "./utils.js";
 
 // TODO: make it not horrible sorry rn im too lazy and i need sleep
