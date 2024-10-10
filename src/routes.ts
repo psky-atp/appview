@@ -38,6 +38,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           rkey: rec.uri.split("/").pop(),
           post: rec.post,
           facets: rec.facets ? JSON.parse(rec.facets) : undefined,
+          reply: rec.reply ? JSON.parse(rec.reply) : undefined,
           handle:
             rec.handle === "psky.social" ? "anon.psky.social" : rec.handle,
           nickname: rec.nickname,

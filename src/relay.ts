@@ -70,6 +70,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     const post = event.commit.record.text;
     const facets = event.commit.record.facets;
+    const reply = event.commit.record.reply;
     if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
     else if (!countGrapheme(post.trim())) return;
 
@@ -82,6 +83,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       rkey: event.commit.rkey,
       post: post,
       facets: facets,
+      reply: reply,
       handle: identity.handle,
       nickname: identity.nickname,
       indexedAt: timestamp,
@@ -95,6 +97,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           cid: event.commit.cid,
           post: post,
           facets: facets ? JSON.stringify(facets) : null,
+          reply: reply ? JSON.stringify(reply) : null,
           account_did: event.did,
           indexed_at: timestamp,
         })
@@ -110,6 +113,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   jetstream.onUpdate("social.psky.feed.post", async (event) => {
     const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
     const facets = event.commit.record.facets;
+    const reply = event.commit.record.reply;
     const timestamp = Date.now();
     await ctx.db
       .updateTable("posts")
@@ -117,6 +121,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         post: event.commit.record.text,
         cid: event.commit.cid,
         facets: facets ? JSON.stringify(facets) : null,
+        reply: reply ? JSON.stringify(reply) : null,
         updated_at: timestamp,
       })
       .where("uri", "=", uri)
@@ -127,6 +132,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       rkey: event.commit.rkey,
       post: event.commit.record.text,
       facets: facets,
+      reply: reply,
       updatedAt: timestamp,
     };
     server.websocketServer.emit("message", JSON.stringify(record));

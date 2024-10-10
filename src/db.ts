@@ -20,6 +20,7 @@ export type Post = {
   cid: string;
   post: string;
   facets: string | null; // JSON string
+  reply: string | null; // JSON string
   account_did: string;
   indexed_at: number;
   updated_at: number | null;
@@ -98,6 +99,15 @@ migrations["004"] = {
       .alterTable("posts")
       .addColumn("cid", "text", (col) => col.notNull())
       .execute();
+  },
+  async down(db: Kysely<unknown>) {
+    await db.schema.dropTable("posts").execute();
+  },
+};
+
+migrations["005"] = {
+  async up(db: Kysely<unknown>) {
+    await db.schema.alterTable("posts").addColumn("reply", "text").execute();
   },
   async down(db: Kysely<unknown>) {
     await db.schema.dropTable("posts").execute();
