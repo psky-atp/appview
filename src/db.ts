@@ -21,13 +21,13 @@ export type Post = {
   facets: string | null; // JSON string
   account_did: string;
   indexed_at: number;
-  updated_at?: number;
+  updated_at: number | null;
 };
 
 export type Account = {
   did: string;
   handle: string;
-  nickname?: string;
+  nickname: string | null;
 };
 
 // Migrations
