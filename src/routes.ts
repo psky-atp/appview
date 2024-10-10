@@ -40,11 +40,10 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           post: rec.post,
           facets: rec.facets ? JSON.parse(rec.facets) : undefined,
           reply: rec.reply ? JSON.parse(rec.reply) : undefined,
-          handle:
-            rec.handle === "psky.social" ? "anon.psky.social" : rec.handle,
-          nickname: rec.nickname,
+          handle: rec.handle,
+          nickname: rec.nickname ?? undefined,
           indexedAt: rec.indexed_at,
-          updatedAt: rec.updated_at,
+          updatedAt: rec.updated_at ?? undefined,
         })),
       };
 
