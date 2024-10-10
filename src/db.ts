@@ -18,7 +18,7 @@ export type DatabaseSchema = {
 export type Post = {
   uri: string;
   post: string;
-  facets?: string; // JSON string
+  facets: string | null; // JSON string
   account_did: string;
   indexed_at: number;
   updated_at?: number;

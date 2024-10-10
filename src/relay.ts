@@ -93,7 +93,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         .values({
           uri: uri,
           post: post,
-          facets: facets ? JSON.stringify(facets) : undefined,
+          facets: facets ? JSON.stringify(facets) : null,
           account_did: event.did,
           indexed_at: timestamp,
         })
@@ -114,7 +114,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       .updateTable("posts")
       .set({
         post: event.commit.record.text,
-        facets: facets ? JSON.stringify(facets) : undefined,
+        facets: facets ? JSON.stringify(facets) : null,
         updated_at: timestamp,
       })
       .where("uri", "=", uri)

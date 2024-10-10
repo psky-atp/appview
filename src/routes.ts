@@ -42,6 +42,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
             rec.handle === "psky.social" ? "anon.psky.social" : rec.handle,
           nickname: rec.nickname,
           indexedAt: rec.indexed_at,
+          updatedAt: rec.updated_at,
         })),
       };
 
