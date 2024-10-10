@@ -36,6 +36,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
         posts: posts.map((rec) => ({
           did: rec.did,
           rkey: rec.uri.split("/").pop(),
+          cid: rec.cid,
           post: rec.post,
           facets: rec.facets ? JSON.parse(rec.facets) : undefined,
           reply: rec.reply ? JSON.parse(rec.reply) : undefined,
