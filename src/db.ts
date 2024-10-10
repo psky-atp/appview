@@ -17,6 +17,7 @@ export type DatabaseSchema = {
 
 export type Post = {
   uri: string;
+  cid: string;
   post: string;
   facets: string | null; // JSON string
   account_did: string;
@@ -84,6 +85,18 @@ migrations["003"] = {
     await db.schema
       .alterTable("posts")
       .addColumn("updated_at", "integer")
+      .execute();
+  },
+  async down(db: Kysely<unknown>) {
+    await db.schema.dropTable("posts").execute();
+  },
+};
+
+migrations["004"] = {
+  async up(db: Kysely<unknown>) {
+    await db.schema
+      .alterTable("posts")
+      .addColumn("cid", "text", (col) => col.notNull())
       .execute();
   },
   async down(db: Kysely<unknown>) {

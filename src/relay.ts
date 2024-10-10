@@ -92,6 +92,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         .insertInto("posts")
         .values({
           uri: uri,
+          cid: event.commit.cid,
           post: post,
           facets: facets ? JSON.stringify(facets) : null,
           account_did: event.did,
@@ -114,6 +115,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       .updateTable("posts")
       .set({
         post: event.commit.record.text,
+        cid: event.commit.cid,
         facets: facets ? JSON.stringify(facets) : null,
         updated_at: timestamp,
       })
