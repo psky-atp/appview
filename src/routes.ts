@@ -2,18 +2,34 @@ import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
 import { GetPostsInterface, GetPostsSchema } from "./lib/schemas.js";
 
+let ipSet: Record<string, number> = {};
+const serverState = (sessionCount: number) =>
+  `{"$type": "serverState", "sessionCount": ${sessionCount}}`;
+
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
   server.register(async () => {
     const stream = server.websocketServer;
     stream.setMaxListeners(0);
 
-    server.get("/subscribe", { websocket: true }, (socket) => {
+    server.get("/subscribe", { websocket: true }, (socket, req) => {
+      if (!ipSet[req.ip]) {
+        ipSet[req.ip] = 1;
+        stream.emit("message", serverState(Object.keys(ipSet).length));
+      } else {
+        ipSet[req.ip] += 1;
+      }
+      socket.send(serverState(Object.keys(ipSet).length));
       const callback = (data: any) => {
         socket.send(String(data));
       };
       stream.on("message", callback);
       socket.on("close", () => {
         stream.removeListener("data", callback);
+        ipSet[req.ip] -= 1;
+        if (ipSet[req.ip] == 0) {
+          delete ipSet[req.ip];
+          stream.emit("message", serverState(Object.keys(ipSet).length));
+        }
       });
     });
   });
