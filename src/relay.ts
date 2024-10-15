@@ -2,7 +2,7 @@ import { Jetstream } from "@skyware/jetstream";
 import fs from "node:fs";
 import { FastifyInstance } from "fastify";
 import { AppContext } from "./index.js";
-import { deleteProfile, getUser, updateUser } from "./db/user.js";
+import { addUser, deleteProfile, getUser, updateUser } from "./db/user.js";
 import { addRoom, deleteRoom, getRoom, updateRoom } from "./db/room.js";
 import { addMessage, deleteMessage, updateMessage } from "./db/message.js";
 import { Message, Room } from "./utils/types.js";
@@ -49,8 +49,8 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
         await deleteMessage(uri);
         record = { $type: "social.psky.chat.message#delete", event: event };
       } else {
-        const user = await updateUser({ did: event.did });
-        if (!user) return;
+        let user = await getUser(event.did);
+        if (!user) user = await addUser({ did: event.did });
         const room = getRoom(event.commit.record.room);
         // TODO: fetch record from repo if room not found
         if (!room) return;
@@ -74,8 +74,8 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           room: event.commit.record.room,
           facets: event.commit.record.facets,
           reply: event.commit.record.reply,
-          handle: user.handle,
-          nickname: user.nickname,
+          handle: user!.handle,
+          nickname: user!.nickname,
           indexedAt: Date.now(),
         };
       }
