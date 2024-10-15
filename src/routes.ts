@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
-import { GetPostsInterface, GetPostsSchema } from "./lib/schemas.js";
+import { GetMessagesInterface, GetMessagesSchema } from "./lib/schemas.js";
 
 let ipSet: Record<string, number> = {};
 const serverState = (sessionCount: number) =>
@@ -34,28 +34,31 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
     });
   });
 
-  server.get<{ Querystring: GetPostsInterface }>(
-    "/posts",
-    { schema: { querystring: GetPostsSchema } },
+  server.get<{ Querystring: GetMessagesInterface }>(
+    "/xrpc/social.psky.chat.getMessages",
+    { schema: { querystring: GetMessagesSchema } },
     async (req, res) => {
-      const posts = await ctx.db
-        .selectFrom("posts")
+      //const { uri } = req.query;
+      const messages = await ctx.db
+        .selectFrom("messages")
         .orderBy("indexed_at", "desc")
         .limit(req.query.limit)
         .offset(req.query.cursor ?? 0)
-        .innerJoin("accounts", "posts.account_did", "accounts.did")
-        .selectAll()
+        .selectAll("messages")
+        .innerJoin("users", "messages.did", "users.did")
+        .select(["handle", "nickname"])
         .execute();
 
       const data = {
-        cursor: posts.length + (req.query.cursor ?? 0),
-        posts: posts.map((rec) => ({
+        cursor: messages.length + (req.query.cursor ?? 0),
+        messages: messages.map((rec) => ({
           did: rec.did,
           rkey: rec.uri.split("/").pop(),
           cid: rec.cid,
-          post: rec.post,
-          facets: rec.facets ? JSON.parse(rec.facets) : undefined,
-          reply: rec.reply ? JSON.parse(rec.reply) : undefined,
+          room: rec.room,
+          content: rec.content,
+          facets: rec.facets ?? undefined,
+          reply: rec.reply ?? undefined,
           handle: rec.handle,
           nickname: rec.nickname ?? undefined,
           indexedAt: rec.indexed_at,
