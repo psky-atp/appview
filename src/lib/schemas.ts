@@ -50,11 +50,12 @@ const FacetsSchema = t.optional(
 );
 type FacetsInterface = t.Infer<typeof FacetsSchema>;
 
-const GetPostsSchema = t.object({
+const GetMessagesSchema = t.object({
+  uri: t.optional(t.string({ format: "uri" })),
   limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
   cursor: t.optional(t.integer({ minimum: 0 })),
 });
-type GetPostsInterface = t.Infer<typeof GetPostsSchema>;
+type GetMessagesInterface = t.Infer<typeof GetMessagesSchema>;
 
-export { FacetsSchema, GetPostsSchema };
-export type { FacetsInterface, GetPostsInterface };
+export { FacetsSchema, GetMessagesSchema };
+export type { FacetsInterface, GetMessagesInterface };

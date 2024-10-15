@@ -10,6 +10,7 @@
     "lex": "npx lex-cli generate ./lexicons/social/psky/**/*.json -o ./src/lib/lexicon.ts"
   },
   "dependencies": {
+    "@atcute/client": "^2.0.3",
     "@fastify/cors": "^10.0.1",
     "@fastify/rate-limit": "^10.1.0",
     "@fastify/websocket": "^11.0.1",

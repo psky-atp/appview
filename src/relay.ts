@@ -1,171 +1,171 @@
 import { Jetstream } from "@skyware/jetstream";
+import fs from "node:fs";
 import { FastifyInstance } from "fastify";
-import type { AppContext } from "./index.js";
-import { countGrapheme } from "unicode-segmenter";
-import { CHARLIMIT, GRAPHLIMIT } from "./env.js";
-import { resolveDid } from "./utils.js";
+import { AppContext } from "./index.js";
+import { deleteProfile, getUser, updateUser } from "./db/user.js";
+import { addRoom, deleteRoom, getRoom, updateRoom } from "./db/room.js";
+import { addMessage, deleteMessage, updateMessage } from "./db/message.js";
+import { Message, Room } from "./utils/types.js";
 
-// TODO: make it not horrible sorry rn im too lazy and i need sleep
-//
-const getIdentity = async (ctx: AppContext, did: string, nickname?: string) => {
-  const account = await ctx.db
-    .selectFrom("accounts")
-    .where("did", "=", did)
-    .selectAll()
-    .executeTakeFirst();
-  const handle = account === undefined ? await resolveDid(did) : account.handle;
-  let res;
-  if (account === undefined) {
-    await ctx.db
-      .insertInto("accounts")
-      .values({ did: did, handle: handle, nickname: nickname })
-      .execute()
-      .catch((err) => ctx.logger.error(err));
-  } else if (nickname !== undefined) {
-    res = await ctx.db
-      .updateTable("accounts")
-      .set({ nickname: nickname })
-      .where("did", "=", did)
-      .execute();
-  }
-  return { nickname: account?.nickname, handle: handle };
-};
+// TODO: proper validation
 
 export function startJetstream(server: FastifyInstance, ctx: AppContext) {
+  let intervalID: NodeJS.Timeout;
+  const cursorFile = fs.readFileSync("cursor.txt", "utf8");
+  if (cursorFile) ctx.logger.info(`Initiate jetstream at cursor ${cursorFile}`);
+
   const jetstream = new Jetstream({
     wantedCollections: ["social.psky.*"],
     endpoint: "wss://jetstream2.us-west.bsky.network/subscribe",
+    cursor: Number(cursorFile),
   });
 
-  jetstream.on("error", (err) => console.error(err));
+  jetstream.on("error", (err) => ctx.logger.error(err));
 
-  jetstream.onCreate("social.psky.actor.profile", async (event) => {
-    const nick = event.commit.record.nickname;
-    if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
-      return;
-
-    await getIdentity(ctx, event.did, nick);
-    ctx.logger.info(`Created profile ${event.did}`);
+  jetstream.on("open", () => {
+    intervalID = setInterval(() => {
+      if (jetstream.cursor) {
+        fs.writeFile("cursor.txt", jetstream.cursor.toString(), (err) => {
+          if (err) console.log(err);
+        });
+      }
+    }, 60000);
   });
 
-  jetstream.onUpdate("social.psky.actor.profile", async (event) => {
-    const nick = event.commit.record.nickname;
-    if (nick !== undefined && (countGrapheme(nick) > 32 || nick.length > 320))
-      return;
-
-    await getIdentity(ctx, event.did, nick);
-    ctx.logger.info(`Created profile ${event.did}`);
-  });
-
-  jetstream.onDelete("social.psky.actor.profile", async (event) => {
-    await ctx.db
-      .updateTable("accounts")
-      .set({ nickname: "" })
-      .where("did", "=", event.did)
-      .executeTakeFirst();
-    ctx.logger.info(`Deleted profile: ${event.did}`);
-  });
-
-  jetstream.onCreate("social.psky.feed.post", async (event) => {
-    const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
-    const post = event.commit.record.text;
-    const facets = event.commit.record.facets;
-    const reply = event.commit.record.reply;
-    if (countGrapheme(post) > GRAPHLIMIT || post.length > CHARLIMIT) return;
-    else if (!countGrapheme(post.trim())) return;
-
-    const identity = await getIdentity(ctx, event.did);
-
-    const timestamp = Date.now();
-    const record = {
-      $type: "social.psky.feed.post#create",
-      did: event.did,
-      rkey: event.commit.rkey,
-      post: post,
-      facets: facets,
-      reply: reply,
-      handle: identity.handle,
-      nickname: identity.nickname,
-      indexedAt: timestamp,
-    };
-
+  jetstream.on("social.psky.actor.profile", async (event) => {
     try {
-      const res = await ctx.db
-        .insertInto("posts")
-        .values({
-          uri: uri,
-          cid: event.commit.cid,
-          post: post,
-          facets: facets ? JSON.stringify(facets) : null,
-          reply: reply ? JSON.stringify(reply) : null,
-          account_did: event.did,
-          indexed_at: timestamp,
-        })
-        .executeTakeFirst();
-      if (res === undefined) return;
-      server.websocketServer.emit("message", JSON.stringify(record));
-      ctx.logger.info(`Created post: ${uri}`);
+      if (event.commit.type === "d") await deleteProfile(event.did);
+      else await updateUser({ did: event.did, profile: event.commit.record });
     } catch (err) {
-      ctx.logger.error(err);
+      ctx.logger.error(err, JSON.stringify(event));
     }
   });
 
-  jetstream.onUpdate("social.psky.feed.post", async (event) => {
-    const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
-    const facets = event.commit.record.facets;
-    const reply = event.commit.record.reply;
-    const timestamp = Date.now();
-    await ctx.db
-      .updateTable("posts")
-      .set({
-        post: event.commit.record.text,
-        cid: event.commit.cid,
-        facets: facets ? JSON.stringify(facets) : null,
-        reply: reply ? JSON.stringify(reply) : null,
-        updated_at: timestamp,
-      })
-      .where("uri", "=", uri)
-      .executeTakeFirst();
-    const record = {
-      $type: "social.psky.feed.post#update",
-      did: event.did,
-      rkey: event.commit.rkey,
-      post: event.commit.record.text,
-      facets: facets,
-      reply: reply,
-      updatedAt: timestamp,
-    };
-    server.websocketServer.emit("message", JSON.stringify(record));
-    ctx.logger.info(`Updated post: ${uri}`);
+  jetstream.on("social.psky.chat.message", async (event) => {
+    try {
+      const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
+      let record;
+      if (event.commit.type === "d") {
+        await deleteMessage(uri);
+        record = { $type: "social.psky.chat.message#delete", event: event };
+      } else {
+        const user = await updateUser({ did: event.did });
+        if (!user) return;
+        const room = getRoom(event.commit.record.room);
+        // TODO: fetch record from repo if room not found
+        if (!room) return;
+        const msg: Message = {
+          uri: uri,
+          cid: event.commit.cid,
+          did: event.did,
+          msg: event.commit.record,
+        };
+        if (event.commit.type === "c") await addMessage(msg);
+        else await updateMessage(msg);
+        record = {
+          $type:
+            event.commit.type === "c" ?
+              "social.psky.chat.message#create"
+            : "social.psky.chat.message#update",
+          did: event.did,
+          rkey: event.commit.rkey,
+          cid: event.commit.cid,
+          content: event.commit.record.content,
+          room: event.commit.record.room,
+          facets: event.commit.record.facets,
+          reply: event.commit.record.reply,
+          handle: user.handle,
+          nickname: user.nickname,
+          indexedAt: Date.now(),
+        };
+      }
+      server.websocketServer.emit("message", JSON.stringify(record));
+    } catch (err) {
+      ctx.logger.error(err, JSON.stringify(event));
+    }
   });
 
-  jetstream.onDelete("social.psky.feed.post", async (event) => {
-    const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
-    await ctx.db.deleteFrom("posts").where("uri", "=", uri).executeTakeFirst();
-    const record = {
-      $type: "social.psky.feed.post#delete",
-      did: event.did,
-      rkey: event.commit.rkey,
-    };
-    server.websocketServer.emit("message", JSON.stringify(record));
-    ctx.logger.info(`Deleted post: ${uri}`);
+  jetstream.on("social.psky.chat.room", async (event) => {
+    try {
+      const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
+      let record;
+      if (event.commit.type === "d") {
+        await deleteRoom(uri);
+        record = { $type: "social.psky.chat.room#delete", event: event };
+      } else {
+        const user = await updateUser({ did: event.did });
+        if (!user) return;
+        const room: Room = {
+          uri: uri,
+          cid: event.commit.cid,
+          owner: event.did,
+          room: event.commit.record,
+        };
+        const res =
+          event.commit.type === "c" ?
+            await addRoom(room)
+          : await updateRoom(room);
+        if (!res) return;
+        record = {
+          $type:
+            event.commit.type === "c" ?
+              "social.psky.chat.room#create"
+            : "social.psky.chat.room#update",
+          record: event,
+        };
+      }
+      server.websocketServer.emit("message", JSON.stringify(record));
+    } catch (err) {
+      ctx.logger.error(err, JSON.stringify(event));
+    }
   });
 
   jetstream.on("identity", async (event) => {
-    const identity = await ctx.db
-      .selectFrom("accounts")
-      .where("did", "=", event.did)
-      .select("handle")
-      .executeTakeFirst();
-    if (identity !== undefined && event.identity.handle) {
-      await ctx.db
-        .updateTable("accounts")
-        .set({ did: event.did, handle: event.identity.handle })
-        .where("did", "=", event.did)
-        .execute();
-      ctx.logger.info(
-        `Updated handle: ${identity.handle} -> ${event.identity.handle}`,
-      );
+    try {
+      const user = await getUser(event.did);
+      if (user !== undefined && event.identity.handle !== user.handle) {
+        await ctx.db
+          .updateTable("users")
+          .set({ handle: event.identity.handle, updated_at: Date.now() })
+          .where("did", "=", event.did)
+          .executeTakeFirstOrThrow();
+        ctx.logger.info(
+          `Updated ${user.did}: ${user.handle} -> ${event.identity.handle}`,
+        );
+      }
+    } catch (err) {
+      ctx.logger.error(err, JSON.stringify(event));
+    }
+  });
+
+  jetstream.on("account", async (event) => {
+    const did = event.account.did;
+    try {
+      const user = await getUser(event.did);
+      if (user === undefined) return;
+      if (!event.account.active && event.account.status === "deleted") {
+        await ctx.db
+          .deleteFrom("users")
+          .where("did", "=", did)
+          .executeTakeFirstOrThrow();
+        ctx.logger.info(`Deleted account: ${did}`);
+      } else if (!event.account.active && event.account.status) {
+        await ctx.db
+          .updateTable("users")
+          .set({ active: false, updated_at: Date.now() })
+          .where("did", "=", did)
+          .executeTakeFirstOrThrow();
+        ctx.logger.info(`Disabled account (${event.account.status}): ${did}`);
+      } else if (event.account.active && !user.active) {
+        await ctx.db
+          .updateTable("users")
+          .set({ active: true, updated_at: Date.now() })
+          .where("did", "=", did)
+          .executeTakeFirstOrThrow();
+        ctx.logger.info(`Reactivated account: ${did}`);
+      }
+    } catch (err) {
+      ctx.logger.error(err, JSON.stringify(event));
     }
   });
 
