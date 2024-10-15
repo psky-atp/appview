@@ -9,7 +9,7 @@ import {
   JSONColumnType,
   ColumnType,
 } from "kysely";
-import { FacetsInterface } from "../lib/schemas.js";
+import { SocialPskyRichtextFacet } from "@atcute/client/lexicons";
 
 // Types
 
@@ -25,7 +25,8 @@ export type MessageTable = {
   did: ColumnType<string, string, never>;
   content: string;
   room: ColumnType<string, string, never>;
-  facets: JSONColumnType<FacetsInterface> | null;
+  //facets: JSONColumnType<SocialPskyRichtextFacet.Main[]> | null;
+  facets: string | null;
   reply: JSONColumnType<{ uri: string; cid: string }> | null;
   indexed_at: ColumnType<Date, number, never>;
   updated_at: ColumnType<Date, never, number> | null;

@@ -57,7 +57,7 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
           cid: rec.cid,
           room: rec.room,
           content: rec.content,
-          facets: rec.facets ?? undefined,
+          facets: rec.facets ? JSON.parse(rec.facets) : undefined,
           reply: rec.reply ?? undefined,
           handle: rec.handle,
           nickname: rec.nickname ?? undefined,
