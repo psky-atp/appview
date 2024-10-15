@@ -1,4 +1,4 @@
-import SqliteDb from "better-sqlite3";
+import SqliteDb from "libsql";
 import {
   Kysely,
   Migrator,
