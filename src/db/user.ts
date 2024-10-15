@@ -19,7 +19,7 @@ const getUser = async (did: string) => {
 
 const addUser = async (user: User) => {
   const handle = await resolveDid(user.did);
-  await ctx.db
+  const res = await ctx.db
     .insertInto("users")
     .values({
       did: user.did,
@@ -30,6 +30,7 @@ const addUser = async (user: User) => {
     .returningAll()
     .executeTakeFirst();
   ctx.logger.info(`Added user: ${user.did}`);
+  return res;
 };
 
 const updateUser = async (user: User) => {
