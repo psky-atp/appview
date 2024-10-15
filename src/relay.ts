@@ -81,6 +81,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           handle: user!.handle,
           nickname: user!.nickname,
           indexedAt: Date.now(),
+          updatedAt: event.commit.type === "u" ? Date.now() : undefined,
         };
       }
       server.websocketServer.emit("message", JSON.stringify(record));
