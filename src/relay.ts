@@ -47,7 +47,11 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       let record;
       if (event.commit.type === "d") {
         await deleteMessage(uri);
-        record = { $type: "social.psky.chat.message#delete", event: event };
+        record = {
+          $type: "social.psky.chat.message#delete",
+          did: event.did,
+          rkey: event.commit.rkey,
+        };
       } else {
         let user = await getUser(event.did);
         if (!user) user = await addUser({ did: event.did });
