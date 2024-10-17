@@ -34,7 +34,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
 
   jetstream.on("social.psky.actor.profile", async (event) => {
     try {
-      if (event.commit.type === "d") await deleteProfile(event.did);
+      if (event.commit.operation === "delete") await deleteProfile(event.did);
       else await updateUser({ did: event.did, profile: event.commit.record });
     } catch (err) {
       ctx.logger.error(err, JSON.stringify(event));
@@ -45,7 +45,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     try {
       const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
       let record;
-      if (event.commit.type === "d") {
+      if (event.commit.operation === "delete") {
         await deleteMessage(uri);
         record = {
           $type: "social.psky.chat.message#delete",
@@ -64,11 +64,11 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           did: event.did,
           msg: event.commit.record,
         };
-        if (event.commit.type === "c") await addMessage(msg);
+        if (event.commit.operation === "create") await addMessage(msg);
         else await updateMessage(msg);
         record = {
           $type:
-            event.commit.type === "c" ?
+            event.commit.operation === "create" ?
               "social.psky.chat.message#create"
             : "social.psky.chat.message#update",
           did: event.did,
@@ -81,7 +81,8 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           handle: user!.handle,
           nickname: user!.nickname,
           indexedAt: Date.now(),
-          updatedAt: event.commit.type === "u" ? Date.now() : undefined,
+          updatedAt:
+            event.commit.operation === "update" ? Date.now() : undefined,
         };
       }
       server.websocketServer.emit("message", JSON.stringify(record));
@@ -94,7 +95,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
     try {
       const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
       let record;
-      if (event.commit.type === "d") {
+      if (event.commit.operation === "delete") {
         await deleteRoom(uri);
         record = { $type: "social.psky.chat.room#delete", event: event };
       } else {
@@ -107,13 +108,13 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
           room: event.commit.record,
         };
         const res =
-          event.commit.type === "c" ?
+          event.commit.operation === "create" ?
             await addRoom(room)
           : await updateRoom(room);
         if (!res) return;
         record = {
           $type:
-            event.commit.type === "c" ?
+            event.commit.operation === "create" ?
               "social.psky.chat.room#create"
             : "social.psky.chat.room#update",
           record: event,
