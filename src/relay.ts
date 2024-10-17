@@ -55,9 +55,20 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       } else {
         let user = await getUser(event.did);
         if (!user) user = await addUser({ did: event.did });
-        const room = getRoom(event.commit.record.room);
+        const room = await getRoom(event.commit.record.room);
         // TODO: fetch record from repo if room not found
         if (!room) return;
+        if (
+          (room.owner_did !== event.did &&
+            room.allowlist?.active &&
+            !room.allowlist.users.includes(event.did)) ||
+          (room.owner_did !== event.did &&
+            room.denylist?.active &&
+            room.denylist.users.includes(event.did))
+        ) {
+          ctx.logger.warn(`Message ignored from ${event.did} in ${room.uri}`);
+          return;
+        }
         const msg: Message = {
           uri: uri,
           cid: event.commit.cid,

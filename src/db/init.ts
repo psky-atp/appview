@@ -8,8 +8,13 @@ import {
   CompiledQuery,
   JSONColumnType,
   ColumnType,
+  ParseJSONResultsPlugin,
 } from "kysely";
-import { SocialPskyRichtextFacet } from "@atcute/client/lexicons";
+import {
+  ComAtprotoRepoStrongRef,
+  SocialPskyChatRoom,
+  SocialPskyRichtextFacet,
+} from "@atcute/client/lexicons";
 
 // Types
 
@@ -25,9 +30,8 @@ export type MessageTable = {
   did: ColumnType<string, string, never>;
   content: string;
   room: ColumnType<string, string, never>;
-  //facets: JSONColumnType<SocialPskyRichtextFacet.Main[]> | null;
-  facets: string | null;
-  reply: JSONColumnType<{ uri: string; cid: string }> | null;
+  facets: JSONColumnType<SocialPskyRichtextFacet.Main[]> | null;
+  reply: JSONColumnType<ComAtprotoRepoStrongRef.Main> | null;
   indexed_at: ColumnType<Date, number, never>;
   updated_at: ColumnType<Date, never, number> | null;
 };
@@ -40,8 +44,8 @@ export type RoomTable = {
   languages: JSONColumnType<string[]> | null;
   topic: string | null;
   tags: JSONColumnType<string[]> | null;
-  allowlist: JSONColumnType<{ active: boolean; users: string[] }> | null;
-  denylist: JSONColumnType<{ active: boolean; users: string[] }> | null;
+  allowlist: JSONColumnType<SocialPskyChatRoom.ModlistRef> | null;
+  denylist: JSONColumnType<SocialPskyChatRoom.ModlistRef> | null;
   updated_at: ColumnType<Date, number, number>;
 };
 
@@ -121,6 +125,7 @@ export const createDb = (location: string): Database => {
     dialect: new SqliteDialect({
       database: new SqliteDb(location),
     }),
+    plugins: [new ParseJSONResultsPlugin()],
   });
   db.executeQuery(CompiledQuery.raw("PRAGMA journal_mode = WAL"));
   db.executeQuery(CompiledQuery.raw("PRAGMA foreign_keys = ON"));
