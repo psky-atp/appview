@@ -1,6 +1,11 @@
 import { FastifyInstance } from "fastify";
 import type { AppContext } from "./index.js";
-import { GetMessagesInterface, GetMessagesSchema } from "./lib/schemas.js";
+import {
+  GetMessagesI,
+  GetMessagesSchema,
+  SocketQueryI,
+  SocketQuerySchema,
+} from "./lib/schemas.js";
 
 let ipSet: Record<string, number> = {};
 const serverState = (sessionCount: number) =>
@@ -11,30 +16,38 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
     const stream = server.websocketServer;
     stream.setMaxListeners(0);
 
-    server.get("/subscribe", { websocket: true }, (socket, req) => {
-      if (!ipSet[req.ip]) {
-        ipSet[req.ip] = 1;
-        stream.emit("message", serverState(Object.keys(ipSet).length));
-      } else {
-        ipSet[req.ip] += 1;
-      }
-      socket.send(serverState(Object.keys(ipSet).length));
-      const callback = (data: any) => {
-        socket.send(String(data));
-      };
-      stream.on("message", callback);
-      socket.on("close", () => {
-        stream.removeListener("data", callback);
-        ipSet[req.ip] -= 1;
-        if (ipSet[req.ip] == 0) {
-          delete ipSet[req.ip];
+    server.get<{ Querystring: SocketQueryI }>(
+      "/subscribe",
+      { schema: { querystring: SocketQuerySchema }, websocket: true },
+      (socket, req) => {
+        if (!ipSet[req.ip]) {
+          ipSet[req.ip] = 1;
           stream.emit("message", serverState(Object.keys(ipSet).length));
+        } else {
+          ipSet[req.ip] += 1;
         }
-      });
-    });
+        socket.send(serverState(Object.keys(ipSet).length));
+        const callback = (data: any) => {
+          if (
+            !req.query.wantedRooms ||
+            req.query.wantedRooms?.includes(JSON.parse(data).room)
+          )
+            socket.send(String(data));
+        };
+        stream.on("message", callback);
+        socket.on("close", () => {
+          stream.removeListener("data", callback);
+          ipSet[req.ip] -= 1;
+          if (ipSet[req.ip] == 0) {
+            delete ipSet[req.ip];
+            stream.emit("message", serverState(Object.keys(ipSet).length));
+          }
+        });
+      },
+    );
   });
 
-  server.get<{ Querystring: GetMessagesInterface }>(
+  server.get<{ Querystring: GetMessagesI }>(
     "/xrpc/social.psky.chat.getMessages",
     { schema: { querystring: GetMessagesSchema } },
     async (req, res) => {

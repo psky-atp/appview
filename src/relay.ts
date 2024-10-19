@@ -46,11 +46,12 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
       let record;
       if (event.commit.operation === "delete") {
-        await deleteMessage(uri);
+        const res = await deleteMessage(uri);
         record = {
           $type: "social.psky.chat.message#delete",
           did: event.did,
           rkey: event.commit.rkey,
+          room: res?.room,
         };
       } else {
         let user = await getUser(event.did);

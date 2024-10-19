@@ -49,8 +49,13 @@ const updateMessage = async (msg: Message) => {
 };
 
 const deleteMessage = async (uri: string) => {
-  await ctx.db.deleteFrom("messages").where("uri", "=", uri).executeTakeFirst();
+  const res = await ctx.db
+    .deleteFrom("messages")
+    .where("uri", "=", uri)
+    .returning("room as room")
+    .executeTakeFirst();
   ctx.logger.info(`Deleted message: ${uri}`);
+  return res;
 };
 
 export { getMessage, addMessage, updateMessage, deleteMessage };

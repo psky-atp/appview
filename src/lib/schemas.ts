@@ -48,14 +48,19 @@ const FacetsSchema = t.optional(
     ),
   ),
 );
-type FacetsInterface = t.Infer<typeof FacetsSchema>;
+type FacetsI = t.Infer<typeof FacetsSchema>;
 
 const GetMessagesSchema = t.object({
   uri: t.optional(t.string({ format: "uri" })),
   limit: t.integer({ minimum: 1, maximum: 100, default: 50 }),
   cursor: t.optional(t.integer({ minimum: 0 })),
 });
-type GetMessagesInterface = t.Infer<typeof GetMessagesSchema>;
+type GetMessagesI = t.Infer<typeof GetMessagesSchema>;
 
-export { FacetsSchema, GetMessagesSchema };
-export type { FacetsInterface, GetMessagesInterface };
+const SocketQuerySchema = t.object({
+  wantedRooms: t.optional(t.array(t.string({ format: "uri" }))),
+});
+type SocketQueryI = t.Infer<typeof SocketQuerySchema>;
+
+export { FacetsSchema, GetMessagesSchema, SocketQuerySchema };
+export type { FacetsI, GetMessagesI, SocketQueryI };
