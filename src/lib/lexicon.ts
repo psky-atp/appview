@@ -37,17 +37,17 @@ declare module "@atcute/client/lexicons" {
     /** A Picosky room belonging to the user. */
     interface Record {
       $type: "social.psky.chat.room";
-      /**
-       * Maximum string length: 320 \
-       * Maximum grapheme length: 32
-       */
-      name: string;
       /** List of users allowed to send messages in the room. */
       allowlist?: ModlistRef;
       /** List of users disallowed to send messages in the room. */
       denylist?: ModlistRef;
       /** Maximum array length: 3 */
       languages?: string[];
+      /**
+       * Maximum string length: 320 \
+       * Maximum grapheme length: 32
+       */
+      name?: string;
       /** Maximum array length: 20 */
       tags?: string[];
       /**

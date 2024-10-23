@@ -40,7 +40,7 @@ export type RoomTable = {
   uri: ColumnType<string, string, never>;
   cid: string;
   owner_did: ColumnType<string, string, never>;
-  name: string;
+  name: string | null;
   languages: JSONColumnType<string[]> | null;
   topic: string | null;
   tags: JSONColumnType<string[]> | null;
@@ -90,7 +90,7 @@ migrations["001"] = {
       .createTable("rooms")
       .addColumn("uri", "text", (col) => col.primaryKey())
       .addColumn("cid", "text", (col) => col.notNull())
-      .addColumn("name", "text", (col) => col.notNull())
+      .addColumn("name", "text")
       .addColumn("owner_did", "text", (col) =>
         col.notNull().references("users.did").onDelete("cascade"),
       )

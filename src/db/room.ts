@@ -17,18 +17,9 @@ const getRoom = async (uri: string) => {
     .executeTakeFirst();
 };
 
-const getRoomByName = async (name: string, did: string) => {
-  return ctx.db
-    .selectFrom("rooms")
-    .where("owner_did", "=", did)
-    .where("name", "=", name)
-    .selectAll()
-    .executeTakeFirst();
-};
-
 const addRoom = async (room: Room) => {
   if (!validateRoomName) return;
-  if (await getRoomByName(room.room.name, room.owner)) return;
+  if (await getRoom(room.uri)) return;
   const res = await ctx.db
     .insertInto("rooms")
     .values({
@@ -48,7 +39,7 @@ const addRoom = async (room: Room) => {
 
 const updateRoom = async (room: Room) => {
   if (!validateRoomName) return;
-  const a = await getRoomByName(room.room.name, room.owner);
+  const a = await getRoom(room.uri);
   if (a && a.uri !== room.uri) return;
   const res = (await getRoom(room.uri)) ?? (await addRoom(room));
   await ctx.db

@@ -5,10 +5,9 @@
     "main": {
       "type": "record",
       "description": "A Picosky room belonging to the user.",
-      "key": "tid",
+      "key": "any",
       "record": {
         "type": "object",
-        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
