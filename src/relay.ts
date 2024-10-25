@@ -16,7 +16,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
 
   const jetstream = new Jetstream({
     wantedCollections: ["social.psky.*"],
-    endpoint: "wss://jetstream2.us-west.bsky.network/subscribe",
+    endpoint: "wss://jetstream2.us-east.bsky.network/subscribe",
     cursor: Number(cursorFile),
   });
 
