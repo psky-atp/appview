@@ -52,7 +52,7 @@ export type RoomTable = {
 export type UserTable = {
   did: ColumnType<string, string, never>;
   handle: string;
-  active: ColumnType<boolean, boolean | undefined, boolean>;
+  active: ColumnType<number, number | undefined, number>;
   nickname: string | null;
   updated_at: ColumnType<Date, number, number>;
 };

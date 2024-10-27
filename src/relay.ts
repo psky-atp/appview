@@ -170,14 +170,14 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
       } else if (!event.account.active && event.account.status) {
         await ctx.db
           .updateTable("users")
-          .set({ active: false, updated_at: Date.now() })
+          .set({ active: 0, updated_at: Date.now() })
           .where("did", "=", did)
           .executeTakeFirstOrThrow();
         ctx.logger.info(`Disabled account (${event.account.status}): ${did}`);
       } else if (event.account.active && !user.active) {
         await ctx.db
           .updateTable("users")
-          .set({ active: true, updated_at: Date.now() })
+          .set({ active: 1, updated_at: Date.now() })
           .where("did", "=", did)
           .executeTakeFirstOrThrow();
         ctx.logger.info(`Reactivated account: ${did}`);
