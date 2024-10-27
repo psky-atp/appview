@@ -51,14 +51,15 @@ export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
     "/xrpc/social.psky.chat.getMessages",
     { schema: { querystring: GetMessagesSchema } },
     async (req, res) => {
-      //const { uri } = req.query;
-      const messages = await ctx.db
-        .selectFrom("messages")
+      const { uri } = req.query;
+      let query = ctx.db.selectFrom("messages").selectAll("messages");
+      if (uri) query = query.where("room", "=", uri);
+      const messages = await query
+        .innerJoin("users", "messages.did", "users.did")
         .orderBy("indexed_at", "desc")
+        .where("users.active", "=", 1)
         .limit(req.query.limit)
         .offset(req.query.cursor ?? 0)
-        .selectAll("messages")
-        .innerJoin("users", "messages.did", "users.did")
         .select(["handle", "nickname"])
         .execute();
 
