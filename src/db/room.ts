@@ -9,7 +9,7 @@ const validateTopic = (topic: string) => {
   return countGrapheme(topic) <= 256 && topic.length <= 2560 ? topic : null;
 };
 
-const getRoom = async (uri: string) => {
+const getRoom = (uri: string) => {
   return ctx.db
     .selectFrom("rooms")
     .where("uri", "=", uri)

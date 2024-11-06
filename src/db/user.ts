@@ -9,7 +9,7 @@ const validateNickname = (nickname: string | undefined) => {
     : null;
 };
 
-const getUser = async (did: string) => {
+const getUser = (did: string) => {
   return ctx.db
     .selectFrom("users")
     .where("did", "=", did)

@@ -7,12 +7,12 @@ import {
   SocketQuerySchema,
 } from "./lib/schemas.js";
 
-let ipSet: Record<string, number> = {};
+const ipSet: Record<string, number> = {};
 const serverState = (sessionCount: number) =>
   `{"$type": "serverState", "sessionCount": ${sessionCount}}`;
 
 export const createRouter = (server: FastifyInstance, ctx: AppContext) => {
-  server.register(async () => {
+  server.register(() => {
     const stream = server.websocketServer;
     stream.setMaxListeners(0);
 

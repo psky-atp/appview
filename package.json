@@ -10,25 +10,26 @@
     "lex": "npx lex-cli generate ./lexicons/social/psky/**/*.json -o ./src/lib/lexicon.ts"
   },
   "dependencies": {
-    "@atcute/client": "^2.0.3",
+    "@atcute/client": "^2.0.4",
     "@fastify/cors": "^10.0.1",
-    "@fastify/rate-limit": "^10.1.0",
+    "@fastify/rate-limit": "^10.1.1",
     "@fastify/websocket": "^11.0.1",
     "@skyware/jetstream": "^0.2.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
-    "fastify": "^5.0.0",
+    "fastify": "^5.1.0",
     "kysely": "^0.27.4",
-    "libsql": "^0.4.6",
-    "pino-pretty": "^11.2.2",
-    "tschema": "^3.1.0",
-    "unicode-segmenter": "^0.10.1"
+    "libsql": "^0.4.7",
+    "pino-pretty": "^11.3.0",
+    "tschema": "^3.2.0",
+    "unicode-segmenter": "^0.11.0"
   },
   "devDependencies": {
-    "@atcute/lex-cli": "^1.0.2",
-    "@types/node": "^22.5.5",
-    "@types/ws": "^8.5.12",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
-  }
+    "@atcute/lex-cli": "^1.0.3",
+    "@types/node": "^22.9.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228"
 }

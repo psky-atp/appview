@@ -50,7 +50,7 @@ const run = async () => {
   return ctx;
 };
 
-const close = async (server: FastifyInstance) => {
+const close = (server: FastifyInstance) => {
   ctx.logger.info("sigint received, shutting down");
   return new Promise<void>((resolve) => {
     server.close(() => {

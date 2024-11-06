@@ -6,7 +6,7 @@ import { Message } from "../utils/types.js";
 const validateMessage = (msg: string) =>
   countGrapheme(msg) <= GRAPHLIMIT && msg.length <= CHARLIMIT;
 
-const getMessage = async (uri: string) => {
+const getMessage = (uri: string) => {
   return ctx.db
     .selectFrom("messages")
     .where("uri", "=", uri)

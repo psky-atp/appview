@@ -21,6 +21,7 @@ export function startJetstream(server: FastifyInstance, ctx: AppContext) {
   });
 
   jetstream.on("error", (err) => ctx.logger.error(err));
+  jetstream.on("close", () => clearInterval(intervalID));
 
   jetstream.on("open", () => {
     intervalID = setInterval(() => {
